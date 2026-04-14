@@ -1,6 +1,7 @@
 import { Bot, Send, X } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import api from "../../api/http";
+import { Link } from "react-router-dom";
 
 const initialMessages = [{ role: "assistant", content: "Hi! I am Flipkart Support. How can I help you today?" }];
 
@@ -10,10 +11,10 @@ const ChatWidget = () => {
   const [input, setInput] = useState("");
   const [typing, setTyping] = useState(false);
 
-  const payloadMessages = useMemo(
-    () => messages.filter((m) => m.content).map((m) => ({ role: m.role, content: m.content })),
-    [messages]
-  );
+  const messageMentionsProducts = (text) => {
+    const normalized = String(text || "").toLowerCase();
+    return ["product", "price", "stock", "brand", "phone", "laptop", "headphone", "recommend"].some((k) => normalized.includes(k));
+  };
 
   const sendMessage = async () => {
     if (!input.trim()) return;
@@ -23,8 +24,14 @@ const ChatWidget = () => {
     setTyping(true);
 
     try {
-      const { data } = await api.post("/chat", { messages: [...payloadMessages, { role: "user", content: input.trim() }] });
-      setMessages((prev) => [...prev, { role: "assistant", content: data.data.message }]);
+      const { data } = await api.post("/chat", {
+        message: input.trim(),
+        history: messages.slice(-6).map((m) => ({ role: m.role, content: m.content }))
+      });
+
+      const reply = data?.reply || "Sorry, I am facing a temporary issue. Please try again.";
+      const sources = Array.isArray(data?.sources) ? data.sources : [];
+      setMessages((prev) => [...prev, { role: "assistant", content: reply, sources }]);
     } catch {
       setMessages((prev) => [...prev, { role: "assistant", content: "Sorry, I am facing a temporary issue. Please try again." }]);
     } finally {
@@ -49,12 +56,32 @@ const ChatWidget = () => {
           <div className="flex-1 space-y-2 overflow-y-auto bg-[#ece5dd] p-3">
             {messages.map((msg, idx) => (
               <div key={`${msg.role}-${idx}`} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-                <div
-                  className={`max-w-[85%] rounded-lg px-3 py-2 text-sm ${
-                    msg.role === "user" ? "bg-[#dcf8c6]" : "bg-white"
-                  }`}
-                >
-                  {msg.content}
+                <div className={`max-w-[85%] rounded-lg px-3 py-2 text-sm ${msg.role === "user" ? "bg-[#dcf8c6]" : "bg-white"}`}>
+                  <p>{msg.content}</p>
+
+                  {msg.role === "assistant" && Array.isArray(msg.sources) && msg.sources.length > 0 && messageMentionsProducts(msg.content) && (
+                    <div className="mt-2 rounded border border-slate-200 p-2">
+                      <p className="mb-2 text-[11px] font-semibold text-slate-500">Related Products</p>
+                      <div className="flex gap-2 overflow-x-auto pb-1">
+                        {msg.sources.slice(0, 3).map((p) => (
+                          <div key={p.slug || p.name} className="w-32 flex-shrink-0 rounded border bg-white p-2">
+                            <img
+                              src={p.images?.[0] || "https://picsum.photos/seed/fallback/80/80"}
+                              alt={p.name}
+                              className="mx-auto h-20 w-20 object-contain"
+                            />
+                            <p className="mt-1 line-clamp-2 text-[11px] font-medium">{String(p.name || "").slice(0, 30)}</p>
+                            <p className="mt-1 text-[11px] font-semibold">₹{Number(p.price || 0).toLocaleString("en-IN")}</p>
+                            {p.slug && (
+                              <Link to={`/products/${p.slug}`} className="mt-1 inline-block text-[11px] font-semibold text-fkBlue">
+                                View
+                              </Link>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
