@@ -639,3 +639,45 @@ on conflict (slug) do update set
   review_count = excluded.review_count,
   images = excluded.images,
   specifications = excluded.specifications;
+-- Enable pgvector extension
+create extension if not exists vector;
+
+-- Separate table for product embeddings (professional pattern)
+create table if not exists public.product_embeddings (
+  id bigint primary key references public.products(id) on delete cascade,
+  embedding vector(1024),
+  embedded_at timestamptz default now()
+);
+
+-- IVFFlat index for fast approximate nearest-neighbor search
+create index if not exists product_embeddings_embedding_idx
+  on public.product_embeddings
+  using ivfflat (embedding vector_cosine_ops)
+  with (lists = 10);
+
+-- RLS: public read (same as products)
+alter table public.product_embeddings enable row level security;
+
+drop policy if exists "Public read embeddings" on public.product_embeddings;
+create policy "Public read embeddings"
+  on public.product_embeddings for select using (true);
+
+-- Helper function: vector similarity search
+-- Returns top K product IDs sorted by cosine similarity
+create or replace function match_products(
+  query_embedding vector(1024),
+  match_count int default 5
+)
+returns table (
+  id bigint,
+  similarity float
+)
+language sql stable
+as $$
+  select
+    pe.id,
+    1 - (pe.embedding <=> query_embedding) as similarity
+  from public.product_embeddings pe
+  order by pe.embedding <=> query_embedding
+  limit match_count;
+$$;

@@ -7,7 +7,8 @@
   "scripts": {
     "dev": "nodemon src/index.js",
     "start": "node src/index.js",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "embed": "node src/scripts/generateEmbeddings.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.88.0",
