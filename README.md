@@ -275,3 +275,48 @@ ForEach-Object { Stop-Process -Id $_ -Force }
 ### Chatbot errors
 
 - Confirm valid `ANTHROPIC_API_KEY` in `server/.env`.
+
+## AI & RAG Architecture
+
+The chatbot uses a Retrieval-Augmented Generation (RAG) flow for product-aware responses.
+
+- **Embeddings model**: Cohere `embed-english-v3.0`
+  - 1024-dimension vectors per product
+  - Product text is generated from name, brand, price, description, and specifications
+- **Vector storage**: Supabase PostgreSQL + `pgvector`
+  - Separate `product_embeddings` table linked to `products(id)`
+- **Similarity retrieval**: cosine similarity via PostgreSQL `match_products()` function
+- **LLM generation**: OpenRouter OpenAI-compatible API
+  - Model: `meta-llama/llama-3.1-8b-instruct:free`
+
+RAG flow (text diagram):
+
+```text
+User message
+   |
+   v
+Cohere Embed API (search_query)
+   |
+   v
+Supabase RPC: match_products(query_embedding)
+   |
+   +--> Top similar product IDs
+           |
+           v
+      Fetch product details from products table
+           |
+           v
+      Build product context string
+           |
+           v
+OpenRouter Chat Completion (Llama 3.1 8B)
+  system prompt + short history + user message + product context
+           |
+           v
+Assistant reply + related product sources (shown in chat UI)
+```
+
+Operational notes:
+
+- Run `npm run embed` in `server/` after seeding or updating products.
+- Keep `COHERE_API_KEY` and `OPENROUTER_API_KEY` in backend env variables only.
