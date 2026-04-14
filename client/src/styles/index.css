@@ -1,0 +1,19 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply bg-slate-100 text-slate-800;
+}
+
+.container-main {
+  @apply mx-auto w-full max-w-7xl px-3 md:px-4;
+}
+
+.fk-card {
+  @apply rounded bg-white shadow-card;
+}
+
+.skeleton {
+  @apply animate-pulse rounded bg-slate-200;
+}
