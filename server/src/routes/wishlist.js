@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { supabaseAdmin } from "../config/supabase.js";
+import { parseOrThrow, wishlistToggleSchema } from "../utils/validators.js";
 
 const router = Router();
 
@@ -20,11 +21,7 @@ router.get("/", async (req, res, next) => {
 
 router.post("/", async (req, res, next) => {
   try {
-    const { product_id } = req.body;
-
-    if (!product_id) {
-      return res.status(400).json({ message: "product_id is required" });
-    }
+    const { product_id } = parseOrThrow(wishlistToggleSchema, req.body);
 
     const { data: existing } = await supabaseAdmin
       .from("wishlist")

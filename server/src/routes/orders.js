@@ -1,15 +1,12 @@
 import { Router } from "express";
 import { supabaseAdmin } from "../config/supabase.js";
+import { idParamSchema, parseOrThrow, placeOrderSchema } from "../utils/validators.js";
 
 const router = Router();
 
 router.post("/", async (req, res, next) => {
   try {
-    const { address_id, discount = 0 } = req.body;
-
-    if (!address_id) {
-      return res.status(400).json({ message: "address_id is required" });
-    }
+    const { address_id, discount } = parseOrThrow(placeOrderSchema, req.body);
 
     const { data, error } = await supabaseAdmin.rpc("place_order_atomic", {
       p_user_id: req.user.id,
@@ -41,7 +38,7 @@ router.get("/", async (req, res, next) => {
 
 router.get("/:id", async (req, res, next) => {
   try {
-    const id = Number(req.params.id);
+    const { id } = parseOrThrow(idParamSchema, req.params);
 
     const { data, error } = await supabaseAdmin
       .from("orders")

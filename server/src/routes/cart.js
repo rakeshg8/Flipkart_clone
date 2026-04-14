@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { supabaseAdmin } from "../config/supabase.js";
+import { cartAddSchema, cartUpdateSchema, idParamSchema, parseOrThrow } from "../utils/validators.js";
 
 const router = Router();
 
@@ -20,11 +21,7 @@ router.get("/", async (req, res, next) => {
 
 router.post("/", async (req, res, next) => {
   try {
-    const { product_id, quantity = 1 } = req.body;
-
-    if (!product_id || quantity < 1) {
-      return res.status(400).json({ message: "Invalid cart payload" });
-    }
+    const { product_id, quantity } = parseOrThrow(cartAddSchema, req.body);
 
     const { data: existing } = await supabaseAdmin
       .from("cart_items")
@@ -60,12 +57,8 @@ router.post("/", async (req, res, next) => {
 
 router.put("/:id", async (req, res, next) => {
   try {
-    const id = Number(req.params.id);
-    const { quantity } = req.body;
-
-    if (!id || quantity < 1) {
-      return res.status(400).json({ message: "Invalid payload" });
-    }
+    const { id } = parseOrThrow(idParamSchema, req.params);
+    const { quantity } = parseOrThrow(cartUpdateSchema, req.body);
 
     const { data, error } = await supabaseAdmin
       .from("cart_items")
@@ -84,7 +77,7 @@ router.put("/:id", async (req, res, next) => {
 
 router.delete("/:id", async (req, res, next) => {
   try {
-    const id = Number(req.params.id);
+    const { id } = parseOrThrow(idParamSchema, req.params);
 
     const { error } = await supabaseAdmin
       .from("cart_items")

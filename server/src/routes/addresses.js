@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { supabaseAdmin } from "../config/supabase.js";
+import { addressCreateSchema, addressUpdateSchema, idParamSchema, parseOrThrow } from "../utils/validators.js";
 
 const router = Router();
 
@@ -20,7 +21,7 @@ router.get("/", async (req, res, next) => {
 
 router.post("/", async (req, res, next) => {
   try {
-    const payload = { ...req.body, user_id: req.user.id };
+    const payload = { ...parseOrThrow(addressCreateSchema, req.body), user_id: req.user.id };
 
     if (payload.is_default) {
       await supabaseAdmin
@@ -44,8 +45,8 @@ router.post("/", async (req, res, next) => {
 
 router.put("/:id", async (req, res, next) => {
   try {
-    const id = Number(req.params.id);
-    const payload = { ...req.body };
+    const { id } = parseOrThrow(idParamSchema, req.params);
+    const payload = { ...parseOrThrow(addressUpdateSchema, req.body) };
 
     if (payload.is_default) {
       await supabaseAdmin
@@ -71,7 +72,7 @@ router.put("/:id", async (req, res, next) => {
 
 router.delete("/:id", async (req, res, next) => {
   try {
-    const id = Number(req.params.id);
+    const { id } = parseOrThrow(idParamSchema, req.params);
 
     const { error } = await supabaseAdmin
       .from("addresses")

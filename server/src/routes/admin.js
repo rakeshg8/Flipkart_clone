@@ -1,6 +1,13 @@
 import { Router } from "express";
 import { supabaseAdmin } from "../config/supabase.js";
 import { parsePagination } from "../utils/pagination.js";
+import {
+  adminCreateProductSchema,
+  adminOrderStatusSchema,
+  adminUpdateProductSchema,
+  idParamSchema,
+  parseOrThrow
+} from "../utils/validators.js";
 
 const router = Router();
 
@@ -80,8 +87,8 @@ router.get("/orders", async (req, res, next) => {
 
 router.put("/orders/:id/status", async (req, res, next) => {
   try {
-    const id = Number(req.params.id);
-    const { status } = req.body;
+    const { id } = parseOrThrow(idParamSchema, req.params);
+    const { status } = parseOrThrow(adminOrderStatusSchema, req.body);
 
     const { data, error } = await supabaseAdmin
       .from("orders")
@@ -113,7 +120,7 @@ router.get("/products", async (req, res, next) => {
 
 router.post("/products", async (req, res, next) => {
   try {
-    const payload = req.body;
+    const payload = parseOrThrow(adminCreateProductSchema, req.body);
     const { data, error } = await supabaseAdmin
       .from("products")
       .insert(payload)
@@ -129,8 +136,8 @@ router.post("/products", async (req, res, next) => {
 
 router.put("/products/:id", async (req, res, next) => {
   try {
-    const id = Number(req.params.id);
-    const payload = req.body;
+    const { id } = parseOrThrow(idParamSchema, req.params);
+    const payload = parseOrThrow(adminUpdateProductSchema, req.body);
 
     const { data, error } = await supabaseAdmin
       .from("products")
@@ -148,7 +155,7 @@ router.put("/products/:id", async (req, res, next) => {
 
 router.delete("/products/:id", async (req, res, next) => {
   try {
-    const id = Number(req.params.id);
+    const { id } = parseOrThrow(idParamSchema, req.params);
     const { error } = await supabaseAdmin.from("products").delete().eq("id", id);
 
     if (error) throw error;
