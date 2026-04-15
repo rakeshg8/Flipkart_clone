@@ -8,7 +8,7 @@ import SkeletonCard from "../components/common/SkeletonCard";
 const banners = [
   {
     image:
-      "https://images.unsplash.com/photo-1517336714739-489689fd1ca8?q=80&w=1600&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=1600&auto=format&fit=crop",
     title: "Electronics Sale",
     subtitle: "Up to 70% off on laptops & mobiles"
   },
