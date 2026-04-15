@@ -20,6 +20,12 @@ Production-grade Flipkart-style e-commerce application built as an SDE intern as
   - cart clearing
 - Admin panel with role-based access and live dashboard metrics
 - AI support chatbot via RAG: Cohere embeddings + Supabase pgvector retrieval + OpenRouter completion
+- Transactional email notifications for:
+  - order placed confirmation
+  - order delivered update
+  - order cancelled update
+  - itemized details in email (name, quantity, amount, thumbnail)
+- Checkout flow guardrails: users must complete Address -> Summary -> Payment before final Place Order
 - Responsive UI with protected routes, skeleton loading, and toast notifications
 
 ## Monorepo Structure
@@ -49,6 +55,7 @@ flipkart-clone/
 - Node.js + Express 4
 - Supabase JS SDK (admin and auth clients)
 - Cohere Embed API + OpenRouter Chat Completions (via fetch)
+- Nodemailer (SMTP-based order notifications)
 - Helmet, CORS, Morgan
 
 ### Database
@@ -100,6 +107,13 @@ Server variables used by code:
 - `OPENROUTER_API_KEY`
 - `OPENROUTER_MODEL` (primary chat model)
 - `OPENROUTER_FALLBACK_MODELS` (comma-separated fallback models)
+- `SMTP_HOST`
+- `SMTP_PORT`
+- `SMTP_SECURE`
+- `SMTP_USER`
+- `SMTP_PASS`
+- `SMTP_FROM`
+- `SMTP_FROM_NAME`
 
 Client variables used by code:
 
@@ -239,6 +253,37 @@ Authorization enforcement locations:
   - `OPENROUTER_API_KEY`
   - `OPENROUTER_MODEL`
   - `OPENROUTER_FALLBACK_MODELS`
+  - `SMTP_HOST`
+  - `SMTP_PORT`
+  - `SMTP_SECURE`
+  - `SMTP_USER`
+  - `SMTP_PASS`
+  - `SMTP_FROM`
+  - `SMTP_FROM_NAME`
+
+## Order Email Notifications
+
+Order emails are sent from backend using SMTP with non-blocking delivery.
+
+- Trigger points:
+  - Order placed: `POST /api/orders`
+  - Admin status change: `PUT /api/admin/orders/:id/status` only for `delivered` and `cancelled`
+- Content includes:
+  - order id and total amount
+  - itemized list (name, quantity, line amount)
+  - thumbnail image when available
+- Delivery behavior:
+  - API response is not blocked by mail transport failures
+  - mail errors are logged server-side and order flow continues
+
+Gmail setup notes:
+
+- Use App Password (not account password)
+- Do not include inline comments in `.env` value lines
+- For Gmail TLS:
+  - `SMTP_HOST=smtp.gmail.com`
+  - `SMTP_PORT=587`
+  - `SMTP_SECURE=false`
 
 ## Database Relationship Summary
 
@@ -254,6 +299,11 @@ Authorization enforcement locations:
 ## Notes And Current Scope
 
 - Payment step is intentionally COD-only in UI, with "Online payment coming soon".
+- Checkout now enforces step order before final placement:
+  - select address
+  - continue to summary
+  - continue to payment (COD)
+  - then Place Order is enabled
 - Product image URLs are placeholder CDN links from Unsplash/Picsum.
 - Search and filters are server-driven via query params listed above.
 
@@ -283,6 +333,13 @@ ForEach-Object { Stop-Process -Id $_ -Force }
 
 - Confirm valid `COHERE_API_KEY` and `OPENROUTER_API_KEY` in `server/.env`.
 - If responses fall back to "I'm having trouble connecting right now", verify your `OPENROUTER_MODEL` is currently available for your account and keep fallback models configured.
+
+### Order email not received
+
+- Restart backend after changing SMTP environment variables.
+- Verify SMTP values have no inline comments on the same line.
+- For Gmail, ensure App Password is active and correctly set in `SMTP_PASS`.
+- Check server logs for mail errors (order API should still succeed even if mail fails).
 
 ## AI & RAG Architecture
 
