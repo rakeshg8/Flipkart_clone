@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { supabaseAdmin } from "../config/supabase.js";
 import { idParamSchema, parseOrThrow, placeOrderSchema } from "../utils/validators.js";
+import { sendOrderPlacedEmail } from "../utils/mailer.js";
 
 const router = Router();
 
@@ -15,6 +16,15 @@ router.post("/", async (req, res, next) => {
     });
 
     if (error) throw error;
+
+    sendOrderPlacedEmail({
+      to: req.user.email,
+      orderId: data?.order_id,
+      total: data?.total
+    }).catch((mailError) => {
+      console.error("Order placed email failed", mailError?.message || mailError);
+    });
+
     res.status(201).json({ message: "Order placed", data });
   } catch (error) {
     next(error);

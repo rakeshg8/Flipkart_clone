@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { supabaseAdmin } from "../config/supabase.js";
 import { parsePagination } from "../utils/pagination.js";
+import { sendOrderStatusEmail } from "../utils/mailer.js";
 import {
   adminCreateProductSchema,
   adminOrderStatusSchema,
@@ -98,6 +99,23 @@ router.put("/orders/:id/status", async (req, res, next) => {
       .single();
 
     if (error) throw error;
+
+    if (["delivered", "cancelled"].includes(status)) {
+      const { data: orderWithUser } = await supabaseAdmin
+        .from("orders")
+        .select("id, status, users(email)")
+        .eq("id", id)
+        .single();
+
+      sendOrderStatusEmail({
+        to: orderWithUser?.users?.email,
+        orderId: orderWithUser?.id,
+        status: orderWithUser?.status
+      }).catch((mailError) => {
+        console.error("Order status email failed", mailError?.message || mailError);
+      });
+    }
+
     res.json({ message: "Order status updated", data });
   } catch (error) {
     next(error);
