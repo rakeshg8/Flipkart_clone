@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, Outlet } from "react-router-dom";
 import Navbar from "./Navbar";
 import ChatWidget from "../chat/ChatWidget";
+import Footer from "./Footer";
 
 const AppLayout = () => {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -37,6 +38,7 @@ const AppLayout = () => {
       <main className="pb-10">
         <Outlet />
       </main>
+      <Footer />
       <ChatWidget />
     </div>
   );

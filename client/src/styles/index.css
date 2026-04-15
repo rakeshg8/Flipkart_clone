@@ -3,11 +3,12 @@
 @tailwind utilities;
 
 body {
-  @apply bg-slate-100 text-slate-800;
+  background-color: #f1f3f6;
+  @apply text-slate-800;
 }
 
 .container-main {
-  @apply mx-auto w-full max-w-7xl px-3 md:px-4;
+  @apply mx-auto w-full max-w-[1400px] px-4;
 }
 
 .fk-card {

@@ -16,18 +16,22 @@ const Navbar = ({ onMenuOpen }) => {
     navigate(`/products?q=${encodeURIComponent(q)}`);
   };
 
+  const displayName = (user?.full_name || user?.email?.split("@")[0] || "USER").split(" ")[0].toUpperCase();
+
   return (
-    <header className="sticky top-0 z-40 bg-fkBlue text-white shadow">
-      <div className="container-main flex h-14 items-center gap-3">
-        <button type="button" className="md:hidden" onClick={onMenuOpen}>
+    <header className="sticky top-0 z-50 bg-[#2874f0] text-white shadow">
+      <div className="container-main flex h-[56px] items-center">
+        <button type="button" className="mr-3 md:hidden" onClick={onMenuOpen}>
           <Menu className="h-5 w-5" />
         </button>
-        <Link to="/" className="text-xl font-bold italic">
-          Flipkart
-          <span className="ml-1 text-xs text-fkYellow">Explore Plus</span>
+        <Link to="/" className="rounded-sm bg-[#ffe500] px-3 py-1 leading-tight">
+          <div className="text-sm font-extrabold italic">
+            <span className="text-[#2874f0]">F</span> <span className="text-white">Flipkart</span>
+          </div>
+          <div className="text-[10px] font-semibold text-[#2874f0]">Explore <span className="text-white">Plus</span></div>
         </Link>
 
-        <form onSubmit={submitSearch} className="hidden flex-1 md:block">
+        <form onSubmit={submitSearch} className="mx-8 hidden max-w-2xl flex-1 md:block">
           <div className="flex items-center rounded-sm bg-white px-3">
             <input
               value={q}
@@ -41,11 +45,12 @@ const Navbar = ({ onMenuOpen }) => {
           </div>
         </form>
 
-        <Link to="/seller" className="hidden text-sm font-medium md:block">
+        <div className="ml-auto flex items-center gap-6 text-white">
+        <Link to="/seller" className="hidden text-sm md:block">
           Become a Seller
         </Link>
 
-        <Link to="/cart" className="relative flex items-center gap-1 text-sm font-semibold">
+        <Link to="/cart" className="relative flex items-center gap-1 text-sm">
           <ShoppingCart className="h-5 w-5" />
           Cart
           {count > 0 && (
@@ -56,14 +61,14 @@ const Navbar = ({ onMenuOpen }) => {
         </Link>
 
         {session && (
-          <Link to="/wishlist" className="hidden items-center gap-1 text-sm font-semibold md:flex">
+          <Link to="/wishlist" className="hidden items-center gap-1 text-sm md:flex">
             <Heart className="h-5 w-5" />
             Wishlist
           </Link>
         )}
 
         {!session ? (
-          <Link to="/auth" className="rounded bg-white px-3 py-1.5 text-sm font-semibold text-fkBlue">
+          <Link to="/auth" className="rounded-sm bg-white px-4 py-1 text-sm font-medium text-[#2874f0]">
             Login
           </Link>
         ) : (
@@ -72,9 +77,9 @@ const Navbar = ({ onMenuOpen }) => {
             onMouseEnter={() => setProfileMenuOpen(true)}
             onMouseLeave={() => setProfileMenuOpen(false)}
           >
-            <button type="button" className="flex items-center gap-1 text-sm font-medium">
+            <button type="button" className="flex items-center gap-1 text-sm font-medium uppercase">
               <User2 className="h-4 w-4" />
-              {user?.full_name || user?.email?.split("@")[0]}
+              {displayName}
             </button>
             <div
               className={`absolute right-0 top-full pt-1 transition ${
@@ -84,24 +89,17 @@ const Navbar = ({ onMenuOpen }) => {
               <div className="w-44 rounded bg-white p-2 text-sm text-slate-700 shadow">
                 <Link
                   className="block rounded px-2 py-1 hover:bg-slate-100"
-                  to="/profile"
-                  onClick={() => setProfileMenuOpen(false)}
-                >
-                Profile
-                </Link>
-                <Link
-                  className="block rounded px-2 py-1 hover:bg-slate-100"
                   to="/orders"
                   onClick={() => setProfileMenuOpen(false)}
                 >
-                Orders
+                My Orders
                 </Link>
                 <Link
                   className="block rounded px-2 py-1 hover:bg-slate-100"
-                  to="/wishlist"
+                  to="/profile"
                   onClick={() => setProfileMenuOpen(false)}
                 >
-                Wishlist
+                My Profile
                 </Link>
                 {user?.role === "admin" && (
                   <Link
@@ -126,19 +124,7 @@ const Navbar = ({ onMenuOpen }) => {
             </div>
           </div>
         )}
-      </div>
-      <div className="container-main pb-2 md:hidden">
-        <form onSubmit={submitSearch} className="flex items-center rounded-sm bg-white px-3">
-          <input
-            value={q}
-            onChange={(event) => setQ(event.target.value)}
-            placeholder="Search products"
-            className="h-9 w-full bg-transparent text-sm text-slate-900 outline-none"
-          />
-          <button type="submit" className="text-fkBlue">
-            <Search className="h-4 w-4" />
-          </button>
-        </form>
+        </div>
       </div>
     </header>
   );

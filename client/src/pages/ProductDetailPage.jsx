@@ -25,6 +25,11 @@ const ProductDetailPage = () => {
     return Math.round(((product.mrp - product.price) / product.mrp) * 100);
   }, [product]);
 
+  const specs = useMemo(
+    () => Object.entries(product?.specifications || {}).map(([key, value]) => ({ key: key.replace(/_/g, " "), value })),
+    [product]
+  );
+
   if (!product) {
     return <div className="container-main py-8">Loading product...</div>;
   }
@@ -63,7 +68,7 @@ const ProductDetailPage = () => {
                   toast.success("Added to cart");
                 })
               }
-              className="rounded border-2 border-fkBlue bg-white py-3 text-sm font-bold text-fkBlue"
+              className="flex-1 border-2 border-[#ff9f00] bg-white py-4 text-base font-bold uppercase tracking-wide text-[#ff9f00] hover:bg-orange-50"
             >
               ADD TO CART
             </button>
@@ -75,7 +80,7 @@ const ProductDetailPage = () => {
                   navigate("/checkout");
                 })
               }
-              className="rounded bg-fkOrange py-3 text-sm font-bold text-white"
+              className="flex-1 bg-[#fb641b] py-4 text-base font-bold uppercase tracking-wide text-white hover:bg-orange-600"
             >
               BUY NOW
             </button>
@@ -88,10 +93,16 @@ const ProductDetailPage = () => {
             <RatingStars rating={product.rating} />
             <span className="text-sm text-slate-500">{product.review_count} ratings</span>
           </div>
-          <div className="mt-3 flex items-center gap-2">
-            <span className="text-2xl font-semibold">₹{Number(product.price).toLocaleString("en-IN")}</span>
-            <span className="text-slate-400 line-through">₹{Number(product.mrp).toLocaleString("en-IN")}</span>
-            <span className="text-green-700">{discountPct}% off</span>
+          <div className="mt-3 flex items-center">
+            <span className="text-xl font-medium text-green-600">
+              ↓{discountPct}%
+            </span>
+            <span className="ml-2 text-lg text-gray-400 line-through">
+              ₹{Number(product.mrp).toLocaleString("en-IN")}
+            </span>
+            <span className="ml-2 text-3xl font-medium text-gray-900">
+              ₹{Number(product.price).toLocaleString("en-IN")}
+            </span>
           </div>
           <p className="mt-2 text-sm text-slate-700">{product.stock > 0 ? `${product.stock} in stock` : "Out of stock"}</p>
 
@@ -115,13 +126,17 @@ const ProductDetailPage = () => {
 
           <details className="mt-4 rounded border p-3" open>
             <summary className="cursor-pointer text-sm font-semibold">Specifications</summary>
-            <div className="mt-2 space-y-1 text-sm">
-              {Object.entries(product.specifications || {}).map(([key, value]) => (
-                <div key={key} className="flex justify-between gap-4 border-b py-1">
-                  <span className="capitalize text-slate-500">{key.replace(/_/g, " ")}</span>
-                  <span>{value}</span>
-                </div>
-              ))}
+            <div className="mt-2 overflow-hidden rounded border border-gray-200">
+              <table className="w-full text-sm">
+                <tbody>
+                  {specs.map((spec, i) => (
+                    <tr key={i} className={i % 2 === 0 ? "bg-gray-50" : "bg-white"}>
+                      <td className="w-1/3 border-b px-4 py-3 text-gray-500">{spec.key}</td>
+                      <td className="border-b px-4 py-3 text-gray-800">{spec.value}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </details>
         </div>
