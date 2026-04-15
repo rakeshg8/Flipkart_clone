@@ -37,6 +37,22 @@ const CheckoutPage = () => {
   const mrpTotal = useMemo(() => items.reduce((sum, item) => sum + Number(item.products.mrp) * item.quantity, 0), [items]);
   const discount = mrpTotal - subtotal;
 
+  const continueToSummary = () => {
+    if (!selectedAddress) {
+      toast.error("Select an address first");
+      return;
+    }
+    setActiveStep(1);
+  };
+
+  const continueToPayment = () => {
+    if (!items.length) {
+      toast.error("Your cart is empty");
+      return;
+    }
+    setActiveStep(2);
+  };
+
   const addAddress = async () => {
     const { data } = await api.post("/addresses", form);
     setAddresses((prev) => [data.data, ...prev]);
@@ -93,7 +109,7 @@ const CheckoutPage = () => {
                   </label>
                 ))}
               </div>
-              <button type="button" onClick={() => setActiveStep(1)} className="mt-4 rounded bg-fkOrange px-4 py-2 text-sm font-semibold text-white">
+              <button type="button" onClick={continueToSummary} className="mt-4 rounded bg-fkOrange px-4 py-2 text-sm font-semibold text-white">
                 CONTINUE
               </button>
 
@@ -132,7 +148,7 @@ const CheckoutPage = () => {
                   </div>
                 ))}
               </div>
-              <button type="button" onClick={() => setActiveStep(2)} className="mt-4 rounded bg-fkOrange px-4 py-2 text-sm font-semibold text-white">
+              <button type="button" onClick={continueToPayment} className="mt-4 rounded bg-fkOrange px-4 py-2 text-sm font-semibold text-white">
                 CONTINUE
               </button>
             </div>
@@ -150,7 +166,15 @@ const CheckoutPage = () => {
           )}
         </div>
 
-        <PriceSummary subtotal={subtotal} discount={discount} total={subtotal} onPlaceOrder={placeOrder} loading={loading} />
+        <PriceSummary
+          subtotal={subtotal}
+          discount={discount}
+          total={subtotal}
+          onPlaceOrder={placeOrder}
+          loading={loading}
+          disabled={activeStep !== 2 || !selectedAddress || !items.length}
+          ctaLabel={activeStep === 2 ? "PLACE ORDER" : "Complete steps to place order"}
+        />
       </div>
     </div>
   );

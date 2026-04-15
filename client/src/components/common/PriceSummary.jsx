@@ -1,4 +1,4 @@
-const PriceSummary = ({ subtotal = 0, discount = 0, total = 0, onPlaceOrder, loading }) => {
+const PriceSummary = ({ subtotal = 0, discount = 0, total = 0, onPlaceOrder, loading, disabled = false, ctaLabel = "PLACE ORDER" }) => {
   return (
     <div className="fk-card sticky top-24 p-4">
       <h3 className="border-b pb-3 text-sm font-semibold text-slate-600">PRICE DETAILS</h3>
@@ -24,10 +24,10 @@ const PriceSummary = ({ subtotal = 0, discount = 0, total = 0, onPlaceOrder, loa
         <button
           type="button"
           onClick={onPlaceOrder}
-          disabled={loading}
+          disabled={loading || disabled}
           className="mt-4 w-full rounded bg-fkOrange py-2 font-semibold text-white disabled:opacity-60"
         >
-          {loading ? "Placing..." : "PLACE ORDER"}
+          {loading ? "Placing..." : ctaLabel}
         </button>
       )}
       <p className="mt-3 text-xs text-green-700">You will save ₹{discount.toLocaleString("en-IN")} on this order</p>
