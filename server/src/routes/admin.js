@@ -103,14 +103,16 @@ router.put("/orders/:id/status", async (req, res, next) => {
     if (["delivered", "cancelled"].includes(status)) {
       const { data: orderWithUser } = await supabaseAdmin
         .from("orders")
-        .select("id, status, users(email)")
+        .select("id, status, total, users(email), order_items(quantity, price_at_purchase, products(name, images))")
         .eq("id", id)
         .single();
 
       sendOrderStatusEmail({
         to: orderWithUser?.users?.email,
         orderId: orderWithUser?.id,
-        status: orderWithUser?.status
+        status: orderWithUser?.status,
+        total: orderWithUser?.total,
+        items: orderWithUser?.order_items || []
       }).catch((mailError) => {
         console.error("Order status email failed", mailError?.message || mailError);
       });
