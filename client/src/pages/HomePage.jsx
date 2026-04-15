@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import api from "../api/http";
 import ProductCard from "../components/common/ProductCard";
 import SkeletonCard from "../components/common/SkeletonCard";
+import { getRecentViewedIds, getTopCategorySlugs } from "../lib/recommendations";
 
 const banners = [
   {
@@ -59,6 +60,7 @@ const HomePage = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [bannerIndex, setBannerIndex] = useState(0);
+  const [personalization, setPersonalization] = useState({ recentViewedIds: [], topCategorySlugs: [] });
   const sectionRefs = useRef({});
 
   useEffect(() => {
@@ -87,12 +89,37 @@ const HomePage = () => {
     load();
   }, []);
 
+  useEffect(() => {
+    const refreshPersonalization = () => {
+      setPersonalization({
+        recentViewedIds: getRecentViewedIds(),
+        topCategorySlugs: getTopCategorySlugs(2)
+      });
+    };
+
+    refreshPersonalization();
+    window.addEventListener("focus", refreshPersonalization);
+    return () => {
+      window.removeEventListener("focus", refreshPersonalization);
+    };
+  }, []);
+
   const grouped = useMemo(() => {
+    const byId = new Map(products.map((p) => [Number(p.id), p]));
+
+    const recentViewed = personalization.recentViewedIds
+      .map((id) => byId.get(Number(id)))
+      .filter(Boolean);
+
+    const recommended = products
+      .filter((p) => personalization.topCategorySlugs.includes(p.categories?.slug))
+      .filter((p) => !recentViewed.some((rv) => rv.id === p.id));
+
     const topDeals = products;
     const electronics = products.filter((p) => p.categories?.slug === "electronics");
     const fashion = products.filter((p) => p.categories?.slug === "fashion");
-    return { topDeals, electronics, fashion };
-  }, [products]);
+    return { topDeals, electronics, fashion, recentViewed, recommended };
+  }, [products, personalization]);
 
   const scrollSection = (key, direction) => {
     const section = sectionRefs.current[key];
@@ -195,10 +222,13 @@ const HomePage = () => {
 
       <SectionRail
         title="Still looking for these?"
-        items={grouped.topDeals}
+        items={grouped.recentViewed.length ? grouped.recentViewed : grouped.topDeals}
         sectionKey="topDeals"
         sectionClass="rounded-md bg-[#dfe7f7] p-4"
       />
+      {grouped.recommended.length > 0 && (
+        <SectionRail title="Recommended for you" items={grouped.recommended} sectionKey="recommended" />
+      )}
       <SectionRail title="Electronics" items={grouped.electronics} sectionKey="electronics" />
       <SectionRail title="Fashion" items={grouped.fashion} sectionKey="fashion" />
     </div>
