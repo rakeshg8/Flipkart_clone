@@ -17,10 +17,17 @@ router.post("/", async (req, res, next) => {
 
     if (error) throw error;
 
+    const { data: orderWithItems } = await supabaseAdmin
+      .from("orders")
+      .select("id, total, order_items(quantity, price_at_purchase, products(name, images))")
+      .eq("id", data?.order_id)
+      .single();
+
     sendOrderPlacedEmail({
       to: req.user.email,
-      orderId: data?.order_id,
-      total: data?.total
+      orderId: orderWithItems?.id || data?.order_id,
+      total: orderWithItems?.total || data?.total,
+      items: orderWithItems?.order_items || []
     }).catch((mailError) => {
       console.error("Order placed email failed", mailError?.message || mailError);
     });
