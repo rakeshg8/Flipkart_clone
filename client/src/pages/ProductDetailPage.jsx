@@ -5,6 +5,7 @@ import api from "../api/http";
 import RatingStars from "../components/common/RatingStars";
 import { useAuth } from "../contexts/AuthContext";
 import { useCart } from "../contexts/CartContext";
+import { trackProductView } from "../lib/recommendations";
 
 const ProductDetailPage = () => {
   const { slug } = useParams();
@@ -19,6 +20,12 @@ const ProductDetailPage = () => {
   useEffect(() => {
     api.get(`/products/${slug}`).then((res) => setProduct(res.data.data));
   }, [slug]);
+
+  useEffect(() => {
+    if (product) {
+      trackProductView(product);
+    }
+  }, [product]);
 
   const discountPct = useMemo(() => {
     if (!product) return 0;
