@@ -5,7 +5,7 @@
 ![Tailwind](https://img.shields.io/badge/TailwindCSS-3-06B6D4?logo=tailwindcss&logoColor=white)
 ![Node](https://img.shields.io/badge/Node.js-Express-339933?logo=node.js&logoColor=white)
 ![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E?logo=supabase&logoColor=white)
-![Claude](https://img.shields.io/badge/Anthropic-Claude%20Haiku-orange)
+![RAG](https://img.shields.io/badge/AI-RAG-blue)
 
 Production-grade Flipkart-style e-commerce application built as an SDE intern assignment. The project is a monorepo with a React frontend and an Express backend using Supabase for Auth, PostgreSQL, and storage-ready schema design.
 
@@ -19,7 +19,7 @@ Production-grade Flipkart-style e-commerce application built as an SDE intern as
   - `orders` + `order_items` creation
   - cart clearing
 - Admin panel with role-based access and live dashboard metrics
-- AI support chatbot via Anthropic Claude Haiku through backend `/api/chat`
+- AI support chatbot via RAG: Cohere embeddings + Supabase pgvector retrieval + OpenRouter completion
 - Responsive UI with protected routes, skeleton loading, and toast notifications
 
 ## Monorepo Structure
@@ -48,7 +48,7 @@ flipkart-clone/
 
 - Node.js + Express 4
 - Supabase JS SDK (admin and auth clients)
-- Anthropic SDK
+- Cohere Embed API + OpenRouter Chat Completions (via fetch)
 - Helmet, CORS, Morgan
 
 ### Database
@@ -63,7 +63,8 @@ flipkart-clone/
 
 - Node.js 18+
 - Supabase project
-- Anthropic API key (for chatbot)
+- Cohere API key (for embeddings)
+- OpenRouter API key (for chat completion)
 
 ### 1. Install Dependencies
 
@@ -95,7 +96,10 @@ Server variables used by code:
 - `SUPABASE_URL`
 - `SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
-- `ANTHROPIC_API_KEY`
+- `COHERE_API_KEY`
+- `OPENROUTER_API_KEY`
+- `OPENROUTER_MODEL` (primary chat model)
+- `OPENROUTER_FALLBACK_MODELS` (comma-separated fallback models)
 
 Client variables used by code:
 
@@ -231,7 +235,10 @@ Authorization enforcement locations:
   - `SUPABASE_URL`
   - `SUPABASE_ANON_KEY`
   - `SUPABASE_SERVICE_ROLE_KEY`
-  - `ANTHROPIC_API_KEY`
+  - `COHERE_API_KEY`
+  - `OPENROUTER_API_KEY`
+  - `OPENROUTER_MODEL`
+  - `OPENROUTER_FALLBACK_MODELS`
 
 ## Database Relationship Summary
 
@@ -274,7 +281,8 @@ ForEach-Object { Stop-Process -Id $_ -Force }
 
 ### Chatbot errors
 
-- Confirm valid `ANTHROPIC_API_KEY` in `server/.env`.
+- Confirm valid `COHERE_API_KEY` and `OPENROUTER_API_KEY` in `server/.env`.
+- If responses fall back to "I'm having trouble connecting right now", verify your `OPENROUTER_MODEL` is currently available for your account and keep fallback models configured.
 
 ## AI & RAG Architecture
 
@@ -287,7 +295,8 @@ The chatbot uses a Retrieval-Augmented Generation (RAG) flow for product-aware r
   - Separate `product_embeddings` table linked to `products(id)`
 - **Similarity retrieval**: cosine similarity via PostgreSQL `match_products()` function
 - **LLM generation**: OpenRouter OpenAI-compatible API
-  - Model: `meta-llama/llama-3.1-8b-instruct:free`
+  - Primary model from `OPENROUTER_MODEL`
+  - Automatic retry across `OPENROUTER_FALLBACK_MODELS` when one model is unavailable
 
 RAG flow (text diagram):
 
@@ -309,7 +318,7 @@ Supabase RPC: match_products(query_embedding)
       Build product context string
            |
            v
-OpenRouter Chat Completion (Llama 3.1 8B)
+OpenRouter Chat Completion (primary + fallback models)
   system prompt + short history + user message + product context
            |
            v
@@ -320,3 +329,4 @@ Operational notes:
 
 - Run `npm run embed` in `server/` after seeding or updating products.
 - Keep `COHERE_API_KEY` and `OPENROUTER_API_KEY` in backend env variables only.
+- Recommended: set `OPENROUTER_MODEL=meta-llama/llama-3.3-70b-instruct:free` and keep a fallback list in `OPENROUTER_FALLBACK_MODELS`.
